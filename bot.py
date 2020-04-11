@@ -2,6 +2,7 @@ import config
 import telebot
 import time
 import db
+from sqlite3 import IntegrityError
 
 
 bot = telebot.TeleBot(config.TOKEN)  # Создание экземпляра класса TeleBot
@@ -127,8 +128,11 @@ def references_command(message):
 def anime_list_command(message):
     bot.clear_step_handler(message)
     kbd = telebot.types.InlineKeyboardMarkup()
+    i = 0
     for item in db.get_category_list():
-        kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item))
+        item2 = 'show_' + str(i)
+        kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item2))
+        i += 1
     kbd.row(telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
     text = 'Список озвученных тайтлов по категориям и сезонам.\nСо временем постараемся залить все серии сюда :)'
     with open(r"media\anime_list.jpg", "rb") as anime_list_pic:
@@ -208,8 +212,11 @@ def add_new_anime_command(message, is_admin=None):
     bot.clear_step_handler(message)
     if is_admin or message.from_user.id in admin_id_list:
         kbd = telebot.types.InlineKeyboardMarkup()
+        i = 0
         for item in db.get_category_list():
-            kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item.upper()))
+            item2 = 'add_' + str(i)
+            kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item2))
+            i += 1
         kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
                 telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
         text = 'Перед добавлением аниме выбери категорию.\n' \
@@ -235,7 +242,7 @@ def waiting_for_category(message, is_admin=None, ctg=None):
                 anime_category = ctg
             anime_list = ''
             for item in db.get_anime_list(ctg=anime_category):
-                anime_list += item + '\n'
+                anime_list += '▶ ' + item + '\n'
             text = 'Теперь пришли название аниме. ' \
                    'Список имеющихся аниме по категории "' + anime_category + '":\n\n' + anime_list
             with open(r"media\admin.jpg", "rb") as admin_pic:
@@ -250,16 +257,27 @@ def waiting_for_category(message, is_admin=None, ctg=None):
 
 def waiting_for_name(message):
     global anime_name
+    already_added = False
     if message.from_user.id in admin_id_list:
         kbd = telebot.types.InlineKeyboardMarkup()
         kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
                 telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
         text = 'Теперь пришли ссылку на это аниме (можно на онлайник, можно на видео с канала, да хоть на ютуб).'
         if message.text:
-            with open(r"media\admin.jpg", "rb") as admin_pic:
-                anime_name = message.text
-                send = bot.send_photo(photo=admin_pic, chat_id=message.chat.id, caption=text, reply_markup=kbd)
-                bot.register_next_step_handler(send, waiting_for_url)
+            for cat in db.get_category_list():
+                for item in db.get_anime_list(ctg=cat):
+                    if item == message.text:
+                        already_added = True
+                        break
+            if already_added:
+                send = bot.send_message(message.chat.id, 'Такое имя уже есть в базе! Выбери другое.')
+                bot.register_next_step_handler(send, waiting_for_name)
+            else:
+                with open(r"media\admin.jpg", "rb") as admin_pic:
+                    anime_name = message.text
+                    send = bot.send_photo(photo=admin_pic, chat_id=message.chat.id, caption=text, reply_markup=kbd)
+                    bot.register_next_step_handler(send, waiting_for_url)
+
         else:
             send = bot.send_message(message.chat.id, 'Пришли название!!!')
             bot.register_next_step_handler(send, waiting_for_name)
@@ -276,14 +294,18 @@ def waiting_for_url(message):
         with open(r"media\admin.jpg", "rb") as admin_pic:
             if message.text:
                 if message.text.startswith('https://'):
-                    anime_url = message.text
-                    db.add_anime(ctg=anime_category, name=anime_name, url=anime_url)
-                    bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
+                    try:
+                        anime_url = message.text
+                        db.add_anime(ctg=anime_category, name=anime_name, url=anime_url)
+                        bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
+                    except IntegrityError:
+                        send = bot.send_message(message.chat.id, 'Такая ссылка уже есть в базе! Пришли другую.')
+                        bot.register_next_step_handler(send, waiting_for_url)
                 else:
-                    send = bot.send_message(message.chat.id, 'Пришли ссылку!!!')
+                    send = bot.send_message(message.chat.id, 'Это не ссылка! Пришли ссылку!!!')
                     bot.register_next_step_handler(send, waiting_for_url)
             else:
-                send = bot.send_message(message.chat.id, 'Пришли ссылку!!!')
+                send = bot.send_message(message.chat.id, 'Это не ссылка! Пришли ссылку!!!')
                 bot.register_next_step_handler(send, waiting_for_url)
     else:
         accept_error(message)
@@ -295,8 +317,11 @@ def delete_anime_command(message, is_admin=None):
     bot.clear_step_handler(message)
     if is_admin or message.from_user.id in admin_id_list:
         kbd = telebot.types.InlineKeyboardMarkup()
+        i = 0
         for item in db.get_category_list():
-            kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item.lower()))
+            item2 = 'delete_' + str(i)
+            kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item2))
+            i += 1
         kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
                 telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
         text = 'Перед удалением аниме выбери категорию.\nСписок имеющихся категорий:'
@@ -309,22 +334,58 @@ def delete_anime_command(message, is_admin=None):
 
 def waiting_for_category_for_delete(message, is_admin=None, ctg=None):
     global anime_category_for_delete
-    if is_admin or message.from_user.id in admin_id_list:
-        if message.text or ctg is not None:
-            if message.text:
-                anime_category_for_delete = message.text
-            else:
-                anime_category_for_delete = ctg
-            kbd = telebot.types.InlineKeyboardMarkup()
-            for item in db.get_anime_list(ctg=ctg):
-                kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item[:10]))
-            kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
-                    telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
-            text = 'Какое аниме будем удалять? ' \
-                   'Список имеющихся аниме по категории "' + anime_category_for_delete + '":'
-            with open(r"media\admin.jpg", "rb") as admin_pic:
-                send = bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
-                bot.register_next_step_handler(send, waiting_for_name_for_delete)
+    cat_is_exists = False
+    if is_admin or message.from_user.id in admin_id_list:  # Проверка на админа
+        if message.text or ctg is not None:  # Если в этот блок попали отправив текст или по нажатию кнопки
+            if message.text:  # Если был прислан текст
+                for cat in db.get_category_list():  # перебрать все категории
+                    if cat == message.text:  # если присланный текст есть в базе категорий, сделать переменную True
+                        cat_is_exists = True
+                        break
+                if cat_is_exists:  # если сделанная переменная True, то...
+                    anime_category_for_delete = message.text  # Записать присланный текст в переменную
+                    with open(r"media\admin.jpg", "rb") as admin_pic:
+                        kbd = telebot.types.InlineKeyboardMarkup()
+                        i = 0  # счётчик для категории
+                        for c in db.get_category_list():
+                            if c == anime_category_for_delete:
+                                j = 0  # счётчик для аниме
+                                for item in db.get_anime_list(ctg=c):
+                                    item2 = 'd_a_' + str(j) + str(i)
+                                    kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item2))
+                                    j += 1  # счётчик для аниме
+                                break
+                            i += 1
+                        kbd.add(
+                            telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
+                            telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
+                        text = 'Какое аниме будем удалять? ' \
+                               'Список имеющихся аниме по категории "' + anime_category_for_delete + '":'
+                        send = bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
+                        bot.register_next_step_handler(send, waiting_for_name_for_delete)
+                else:  # Если же сделанная переменная так и осталась False, то такой категории в базе нет, и...
+                    send = bot.send_message(message.chat.id, 'В базе нет такой категории! Пришли существующую.')
+                    bot.register_next_step_handler(send, waiting_for_category_for_delete)
+            else:  # если категорию выбрали по нажатию кнопки
+                anime_category_for_delete = ctg  # записать в переменную переданное через кнопку значение
+                with open(r"media\admin.jpg", "rb") as admin_pic:
+                    kbd = telebot.types.InlineKeyboardMarkup()
+                    i = 0  # счётчик для категории
+                    for c in db.get_category_list():
+                        if c == anime_category_for_delete:
+                            j = 0  # счётчик для аниме
+                            for item in db.get_anime_list(ctg=c):
+                                item2 = 'd_a_' + str(j) + str(i)
+                                kbd.row(telebot.types.InlineKeyboardButton(text=item, callback_data=item2))
+                                j += 1  # счётчик для аниме
+                            break
+                        i += 1
+                    kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
+                            telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
+                    text = 'Какое аниме будем удалять? ' \
+                           'Список имеющихся аниме по категории "' + anime_category_for_delete + '":'
+                    send = bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
+                    bot.register_next_step_handler(send, waiting_for_name_for_delete)
         else:
             send = bot.send_message(chat_id=message.chat.id, text='Установи категорию!!!')
             bot.register_next_step_handler(send, waiting_for_category_for_delete)
@@ -334,21 +395,39 @@ def waiting_for_category_for_delete(message, is_admin=None, ctg=None):
 
 def waiting_for_name_for_delete(message, is_admin=None, name=None):
     global anime_name_for_delete
-    if is_admin or message.from_user.id in admin_id_list:
-        if message.text or name is not None:
-            if message.text:
-                anime_name_for_delete = message.text
-            else:
+    name_is_exists = False
+    if is_admin or message.from_user.id in admin_id_list:  # проверка на админа
+        if message.text or name is not None:  # если попали в этот блок по отправлению текста или нажатию кнопки
+            if message.text:  # если название выбрали, отправив текст, то...
+                for n in db.get_anime_list(ctg=anime_category_for_delete):  # перебрать все аниме
+                    if n == message.text:  # если присланный текст есть в базе аниме, сделать переменную True
+                        name_is_exists = True
+                        break
+                if name_is_exists:  # если сделанная переменная True, то...
+                    anime_name_for_delete = message.text  # Записать присланный текст в переменную
+                    with open(r"media\admin.jpg", "rb") as admin_pic:
+                        kbd = telebot.types.InlineKeyboardMarkup()
+                        kbd.add(
+                            telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
+                            telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
+                        text = 'Аниме удалено.'
+                        db.delete_anime(name=anime_name_for_delete)
+                        bot.clear_step_handler(message)
+                        bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
+                else:  # Если же сделанная переменная так и осталась False, то такого названия аниме в базе нет, и...
+                    send = bot.send_message(message.chat.id, 'В этой категории нет такого аниме! Выбери существующее.')
+                    bot.register_next_step_handler(send, waiting_for_name_for_delete)
+            else:  # если название выбрали, нажав на соответствующую кнопку
                 anime_name_for_delete = name
-            kbd = telebot.types.InlineKeyboardMarkup()
-            kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
-                    telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
-            text = 'Аниме удалено.'
-            db.delete_anime(name=anime_name_for_delete)
-            with open(r"media\admin.jpg", "rb") as admin_pic:
-                bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
+                with open(r"media\admin.jpg", "rb") as admin_pic:
+                    kbd = telebot.types.InlineKeyboardMarkup()
+                    kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
+                            telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
+                    text = 'Аниме удалено.'
+                    db.delete_anime(name=anime_name_for_delete)
+                    bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
         else:
-            send = bot.send_message(message.chat.id, 'Пришли название!!!')
+            send = bot.send_message(message.chat.id, 'Пришли название!')
             bot.register_next_step_handler(send, waiting_for_name_for_delete)
     else:
         accept_error(message)
@@ -358,7 +437,7 @@ def waiting_for_name_for_delete(message, is_admin=None, name=None):
 def get_anime(message, ctg):
     kbd = telebot.types.InlineKeyboardMarkup()
     for n, u in db.get_anime_list_and_refs(ctg=ctg):
-        kbd.row(telebot.types.InlineKeyboardButton(text=str(n), url=str(u)))
+        kbd.row(telebot.types.InlineKeyboardButton(text=n, url=u))
     kbd.row(telebot.types.InlineKeyboardButton(text='Назад', callback_data='anime_list'))
     kbd.row(telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
     bot.edit_message_caption(caption=ctg, chat_id=message.chat.id, message_id=message.message_id, reply_markup=kbd)
@@ -424,21 +503,23 @@ def all_callbacks(c):
         else:
             accept_error(c.message)
 
+    i = 0  # счётчик категорий
     for ctg in db.get_category_list():
-        if c.data == ctg:  # в качестве колбэка принимается категория из БД и она же потом передается в функцию
-            get_anime(c.message, ctg)  # вывод аниме для пользователей
-        elif c.data == ctg.upper():  # для добавления аниме
+        if c.data == 'show_' + str(i):  # для простого вывода категории для пользователей
+            get_anime(c.message, ctg)
+        elif c.data == 'add_' + str(i):  # для добавления категории
             bot.clear_step_handler(message=c.message)
             waiting_for_category(c.message, is_admin=True, ctg=ctg)
-        elif c.data == ctg.lower():  # для удаления аниме, 1-й этап
+        elif c.data == 'delete_' + str(i):  # для удаления аниме, 1-й этап - определение категории
             bot.clear_step_handler(message=c.message)
             waiting_for_category_for_delete(c.message, is_admin=True, ctg=ctg)
-        else:
-            for anime in db.get_anime_list(ctg=ctg):
-                if c.data == anime[:10]:
-                    bot.clear_step_handler(message=c.message)
-                    waiting_for_name_for_delete(c.message, is_admin=True, name=anime)
-
+        j = 0
+        for anime in db.get_anime_list(ctg=ctg):  # для удаления аниме, 2-й этап - определение названия аниме
+            if c.data == 'd_a_' + str(j) + str(i):
+                bot.clear_step_handler(message=c.message)
+                waiting_for_name_for_delete(c.message, is_admin=True, name=anime)
+            j += 1
+        i += 1
 
 # Обработка сообщений --------------------------------------------------------------------------------------------------
 @bot.message_handler(content_types=['text', 'audio', 'document', 'photo', 'sticker', 'video', 'video_note', 'voice', 'location', 'contact'])
@@ -471,9 +552,8 @@ def text_message(message):
 
 if __name__ == '__main__':
     try:
-        bot.polling(none_stop=True, interval=0, timeout=20)
+        bot.polling(none_stop=True, interval=0, timeout=50)
         db.creating_general_table()  # пересоздавать таблицу при запуске кода, когда force=True
     except Exception as E:
         print(E.args)
         time.sleep(2)
-
