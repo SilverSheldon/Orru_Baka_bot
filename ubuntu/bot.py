@@ -18,7 +18,7 @@ def start_command(message):
     kbd.add(telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
     text = 'Привет! {0.first_name} на связи.\n' \
            'Чтобы узнать о доступных командах, нажми "В главное меню"'.format(bot.get_me())
-    with open(r"media\hello.jpg", "rb") as start_pic:
+    with open(r"media/hello.jpg", "rb") as start_pic:
         if message.text == '/start':
             bot.send_photo(chat_id=message.chat.id, photo=start_pic, caption=text, reply_markup=kbd)
         else:
@@ -43,7 +43,7 @@ def help_command(message):
     kbd.row(telebot.types.InlineKeyboardButton(text='Настройки (только для админов)', callback_data='admin_commands'))
     kbd.row(telebot.types.InlineKeyboardButton(text='Написать разработчику', url='https://t.me/Jitterbug_Jemboree'))
     text = 'Главное меню'
-    with open(r"media\help.jpg", "rb") as help_pic:
+    with open(r"media/help.jpg", "rb") as help_pic:
         if message.text == '/help':
             bot.send_photo(chat_id=message.chat.id, photo=help_pic, caption=text, reply_markup=kbd)
         else:
@@ -67,7 +67,7 @@ def donate_command(message):
            'Перевод VK:\n' \
            '  <a href="https://vk.com/im?peers=-181492719_c159&sel=190579374">- в личные сообщения</a>\n' \
            '  <a href="https://vk.com/im?peers=c159_190579374&sel=-181492719">- в сообщения группы VK</a>'
-    with open(r"media\donate.jpg", "rb") as donate_pic:
+    with open(r"media/donate.jpg", "rb") as donate_pic:
         if message.text == '/donate':
             bot.send_photo(chat_id=message.chat.id, photo=donate_pic, caption=text, parse_mode='html', reply_markup=kbd)
         else:
@@ -88,7 +88,7 @@ def channel_command(message):
     kbd.add(telebot.types.InlineKeyboardButton(text='Открыть канал', url='https://t.me/orrubaka'),
             telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
     text = 'Присоединяйся к моему <a href="https://t.me/orrubaka">каналу</a>, где публикуется самая свежая озвучка!'
-    with open(r"media\channel.jpg", "rb") as channel_pic:
+    with open(r"media/channel.jpg", "rb") as channel_pic:
         if message.text == '/channel':
             bot.send_photo(message.chat.id, photo=channel_pic, caption=text, parse_mode='html', reply_markup=kbd)
         else:
@@ -112,7 +112,7 @@ def references_command(message):
             telebot.types.InlineKeyboardButton(text='Канал в Telegram', url='https://t.me/orrubaka'))
     kbd.row(telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
     text = 'Я в соцсетях'
-    with open(r"media\references.jpg", "rb") as references_pic:
+    with open(r"media/references.jpg", "rb") as references_pic:
         if message.text == '/references':
             bot.send_photo(chat_id=message.chat.id, photo=references_pic, caption=text, reply_markup=kbd)
         else:
@@ -135,7 +135,7 @@ def anime_list_command(message):
         i += 1
     kbd.row(telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
     text = 'Список озвученных тайтлов по категориям и сезонам.\nСо временем постараемся залить все серии сюда :)'
-    with open(r"media\anime_list.jpg", "rb") as anime_list_pic:
+    with open(r"media/anime_list.jpg", "rb") as anime_list_pic:
         if message.text == '/anime_list':
             bot.send_photo(chat_id=message.chat.id, photo=anime_list_pic, caption=text, reply_markup=kbd)
         else:
@@ -159,7 +159,7 @@ def admin_commands_command(message, is_admin=None):
         kbd.add(telebot.types.InlineKeyboardButton(text='Все команды бота', callback_data='all_commands'),
                 telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
         text = 'Добро пожаловать в админку!\nДоступные команды:'
-        with open(r"media\admin.jpg", "rb") as admin_pic:
+        with open(r"media/admin.jpg", "rb") as admin_pic:
             if message.text == '/admin_commands':
                 bot.send_photo(photo=admin_pic, chat_id=message.chat.id, caption=text, reply_markup=kbd)
             else:
@@ -181,7 +181,7 @@ def all_commands_command(message, is_admin=None):
         kbd = telebot.types.InlineKeyboardMarkup()
         kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
                 telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
-        with open(r"media\admin.jpg", "rb") as admin_pic:
+        with open(r"media/admin.jpg", "rb") as admin_pic:
             text = 'Список всех команд\n\n' \
                    'Общие:\n\n' \
                    '  /start\n' \
@@ -222,7 +222,7 @@ def add_new_anime_command(message, is_admin=None):
         text = 'Перед добавлением аниме выбери категорию.\n' \
                'Если это новая категория, пришли мне её название.\n' \
                'Список имеющихся категорий:'
-        with open(r"media\admin.jpg", "rb") as admin_pic:
+        with open(r"media/admin.jpg", "rb") as admin_pic:
             send = bot.send_photo(photo=admin_pic, chat_id=message.chat.id, caption=text, reply_markup=kbd)
             bot.register_next_step_handler(message=send, callback=waiting_for_category)
     else:  # если не админ
@@ -245,7 +245,7 @@ def waiting_for_category(message, is_admin=None, ctg=None):
                 anime_list += '▶ ' + item + '\n'
             text = 'Теперь пришли название аниме. ' \
                    'Список имеющихся аниме по категории "' + anime_category + '":\n\n' + anime_list
-            with open(r"media\admin.jpg", "rb") as admin_pic:
+            with open(r"media/admin.jpg", "rb") as admin_pic:
                 send = bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
                 bot.register_next_step_handler(send, waiting_for_name)
         else:
@@ -273,7 +273,7 @@ def waiting_for_name(message):
                 send = bot.send_message(message.chat.id, 'Такое имя уже есть в базе! Выбери другое.')
                 bot.register_next_step_handler(send, waiting_for_name)
             else:
-                with open(r"media\admin.jpg", "rb") as admin_pic:
+                with open(r"media/admin.jpg", "rb") as admin_pic:
                     anime_name = message.text
                     send = bot.send_photo(photo=admin_pic, chat_id=message.chat.id, caption=text, reply_markup=kbd)
                     bot.register_next_step_handler(send, waiting_for_url)
@@ -291,7 +291,7 @@ def waiting_for_url(message):
         kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
                 telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
         text = 'Аниме добавлено.'
-        with open(r"media\admin.jpg", "rb") as admin_pic:
+        with open(r"media/admin.jpg", "rb") as admin_pic:
             if message.text:
                 if message.text.startswith('https://'):
                     try:
@@ -325,7 +325,7 @@ def delete_anime_command(message, is_admin=None):
         kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
                 telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
         text = 'Перед удалением аниме выбери категорию.\nСписок имеющихся категорий:'
-        with open(r"media\admin.jpg", "rb") as admin_pic:
+        with open(r"media/admin.jpg", "rb") as admin_pic:
             send = bot.send_photo(chat_id=message.chat.id, photo=admin_pic, caption=text, reply_markup=kbd)
             bot.register_next_step_handler(message=send, callback=waiting_for_category_for_delete)
     else:  # если не админ
@@ -344,7 +344,7 @@ def waiting_for_category_for_delete(message, is_admin=None, ctg=None):
                         break
                 if cat_is_exists:  # если сделанная переменная True, то...
                     anime_category_for_delete = message.text  # Записать присланный текст в переменную
-                    with open(r"media\admin.jpg", "rb") as admin_pic:
+                    with open(r"media/admin.jpg", "rb") as admin_pic:
                         kbd = telebot.types.InlineKeyboardMarkup()
                         i = 0  # счётчик для категории
                         for c in db.get_category_list():
@@ -368,7 +368,7 @@ def waiting_for_category_for_delete(message, is_admin=None, ctg=None):
                     bot.register_next_step_handler(send, waiting_for_category_for_delete)
             else:  # если категорию выбрали по нажатию кнопки
                 anime_category_for_delete = ctg  # записать в переменную переданное через кнопку значение
-                with open(r"media\admin.jpg", "rb") as admin_pic:
+                with open(r"media/admin.jpg", "rb") as admin_pic:
                     kbd = telebot.types.InlineKeyboardMarkup()
                     i = 0  # счётчик для категории
                     for c in db.get_category_list():
@@ -405,7 +405,7 @@ def waiting_for_name_for_delete(message, is_admin=None, name=None):
                         break
                 if name_is_exists:  # если сделанная переменная True, то...
                     anime_name_for_delete = message.text  # Записать присланный текст в переменную
-                    with open(r"media\admin.jpg", "rb") as admin_pic:
+                    with open(r"media/admin.jpg", "rb") as admin_pic:
                         kbd = telebot.types.InlineKeyboardMarkup()
                         kbd.add(
                             telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
@@ -419,7 +419,7 @@ def waiting_for_name_for_delete(message, is_admin=None, name=None):
                     bot.register_next_step_handler(send, waiting_for_name_for_delete)
             else:  # если название выбрали, нажав на соответствующую кнопку
                 anime_name_for_delete = name
-                with open(r"media\admin.jpg", "rb") as admin_pic:
+                with open(r"media/admin.jpg", "rb") as admin_pic:
                     kbd = telebot.types.InlineKeyboardMarkup()
                     kbd.add(telebot.types.InlineKeyboardButton(text='Панель админа', callback_data='admin_commands'),
                             telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
@@ -447,7 +447,7 @@ def accept_error(message):
     kbd = telebot.types.InlineKeyboardMarkup()
     kbd.row(telebot.types.InlineKeyboardButton(text='В главное меню', callback_data='help'))
     text = 'ТЫ НЕ  ̶А̶Д̶М̶И̶Н̶  ПРОЙДЕШЬ!!!'
-    with open(r"media\accept_error.jpg", "rb") as accept_error_pic:
+    with open(r"media/accept_error.jpg", "rb") as accept_error_pic:
         if message.text:
             bot.send_photo(chat_id=message.chat.id,
                            photo=accept_error_pic,
@@ -531,22 +531,22 @@ def text_message(message):
             bot.send_sticker(message.chat.id, data='CAACAgIAAxkBAAMiXjc3MHuW4Vhz_efkFQKeA8-ppKQAArgAA3uVzxo82SLLmUQS9hgE')
             bot.send_message(message.chat.id, text='Потерялся без кнопочек?)\nВведи /start или /help')
         elif message.text.lower() == 'лена' or message.text.lower() == 'елена' or message.text.lower() == 'orru':
-            with open(r"media\lena.jpg", "rb") as lena_pic:
+            with open(r"media/lena.jpg", "rb") as lena_pic:
                 bot.send_photo(message.chat.id, lena_pic, reply_markup=kbd)
         elif message.text.lower() == 'саша' or message.text.lower() == 'александр' or message.text.lower() == 'airis':
-            with open(r"media\sasha.jpg", "rb") as sasha_pic:
+            with open(r"media/sasha.jpg", "rb") as sasha_pic:
                 bot.send_photo(message.chat.id, sasha_pic, reply_markup=kbd)
         elif message.text.lower() == 'даша' or message.text.lower() == 'дарья':
-            with open(r"media\dasha.jpg", "rb") as dasha_pic:
+            with open(r"media/dasha.jpg", "rb") as dasha_pic:
                 bot.send_photo(message.chat.id, dasha_pic, reply_markup=kbd)
         elif message.text.lower() == 'колбаска' or message.text.lower() == 'колбасятина':
-            with open(r"media\kolbasyatina.jpg", "rb") as nano_pic:
+            with open(r"media/kolbasyatina.jpg", "rb") as nano_pic:
                 bot.send_photo(message.chat.id, nano_pic, reply_markup=kbd)
         else:
-            with open(r"media\text_error.jpg", "rb") as text_error_pic:
+            with open(r"media/text_error.jpg", "rb") as text_error_pic:
                 bot.send_photo(message.chat.id, text_error_pic, caption='Увы, я не понимаю...', reply_markup=kbd)
     else:
-        with open(r"media\text_error.jpg", "rb") as text_error_pic:
+        with open(r"media/text_error.jpg", "rb") as text_error_pic:
             bot.send_photo(message.chat.id, text_error_pic, caption='Увы, я не понимаю...', reply_markup=kbd)
 
 
